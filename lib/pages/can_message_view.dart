@@ -3,8 +3,14 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:trace_viewer/models/can_trace/can_message.dart';
 
 class CanMessageView extends StatelessWidget {
-  const CanMessageView({required this.message, super.key});
+  const CanMessageView({
 
+    this.trailing,
+    required this.message,
+    super.key,
+  });
+
+  final Widget? trailing;
   final CanMessage message;
 
   @override
@@ -15,13 +21,17 @@ class CanMessageView extends StatelessWidget {
       fontSize: 14,
     );
 
-    final fragments = message.data.map((e) => e.toRadixString(16).toUpperCase().padLeft(2, "0")).toList();
+    final fragments = message.data
+        .map((e) => e.toRadixString(16).toUpperCase().padLeft(2, "0"))
+        .toList();
     var fragmentColors = [
       message.multiLine ? style.copyWith(color: Colors.white38) : style,
     ];
 
-    if (message.parent != null && message.parent! - message.messageNumber == -1) {
-      fragmentColors = List.generate(8, (index) => style.copyWith(color: Colors.white12));
+    if (message.parent != null &&
+        message.parent! - message.messageNumber == -1) {
+      fragmentColors =
+          List.generate(8, (index) => style.copyWith(color: Colors.white12));
     }
 
     if (!message.multiLine && message.parent == null) {
@@ -41,6 +51,7 @@ class CanMessageView extends StatelessWidget {
 
     final row = Row(
       children: [
+        trailing ?? const SizedBox(),
         SizedBox(
           width: 60,
           child: Text(
@@ -90,4 +101,3 @@ class CanMessageView extends StatelessWidget {
     );
   }
 }
-

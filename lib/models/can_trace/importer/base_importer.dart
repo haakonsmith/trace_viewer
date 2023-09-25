@@ -6,7 +6,7 @@ abstract class TraceImporter {
 
   const TraceImporter(this.data);
 
-  (CanTrace, List<(int, Exception)>) parse();
+  (CanTrace, List<(int, Exception)>) parse(String name);
 
   static TraceImporter? import(String data) {
     if (PcanImporter.canParse(data)) return PcanImporter(data);

@@ -17,36 +17,62 @@ class _TraceScaffoldState extends State<TraceScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(actions: [
-        IconButton(
-          onPressed: () {
-            setState(() {
-              trace = null;
-            });
-          },
-          icon: const Icon(Icons.delete),
-        ),
-      ]),
+      appBar: AppBar(
+        title: trace == null ? const Text("No File") : Text(trace!.name),
+        actions: [
+          IconButton(
+            onPressed: () {
+              setState(() {
+                trace = null;
+              });
+            },
+            icon: const Icon(Icons.close),
+          ),
+        ],
+      ),
       body: DropTarget(
         onDragDone: (detail) async {
           final file = detail.files.firstOrNull;
 
           if (file == null) return;
 
-          final fileData = await file.readAsString();
+          late final String fileData;
+
+          try {
+            fileData = await file.readAsString();
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text("File contains non ascii character")));
+            return;
+          }
 
           final importer = TraceImporter.import(fileData);
 
-          if (importer == null) return;
+          if (importer == null) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Unknown file type")));
+            return;
+          }
 
-          final traceResult = importer.parse();
+          final watch = Stopwatch()..start();
 
-          trace = traceResult.$1;
+          final traceResult = importer.parse(file.name);
+          watch.stop();
 
-          setState(() {});
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text("Parsing took: ${watch.elapsedMilliseconds}ms"),
+            ));
+          }
+
+          setState(() {
+            trace = traceResult.$1;
+          });
         },
         child: Center(
-          child: trace == null ? const Text('drop here') : TraceView(trace: trace!),
+          child: trace == null
+              ? const Text('drop here')
+              : TraceView(trace: trace!),
         ),
       ),
     );
