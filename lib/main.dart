@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:trace_viewer/pages/trace_scaffold.dart';
+import 'package:trace_viewer/utils/db.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  XDatabase.instance.init();
+
   runApp(const TraceViewerApp());
 }
 

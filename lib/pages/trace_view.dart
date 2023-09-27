@@ -11,6 +11,8 @@ import 'package:trace_viewer/widgets/expansion_tile.dart';
 
 typedef TraceItem = (CanMessage, List<CanMessage>);
 
+class TraceViewController extends ChangeNotifier {}
+
 class TraceView extends StatefulWidget {
   const TraceView({
     required this.trace,
@@ -32,8 +34,8 @@ class _TraceViewState extends State<TraceView> {
 
   late final List<TraceItem> data;
   late final HugeListViewController controller;
-  final Map<int, CustomExpansionTileController> controllers = Map();
-  final Map<int, GlobalKey<CustomExpansionTileState>> keys = Map();
+  final Map<int, CustomExpansionTileController> controllers = {};
+  final Map<int, GlobalKey<CustomExpansionTileState>> keys = {};
 
   final LruMap<int, HugeListViewPageResult<TraceItem>>? lruMap = LruMap();
 
@@ -74,12 +76,8 @@ class _TraceViewState extends State<TraceView> {
     double margin = Random().nextDouble() * 50;
 
     return Padding(
-      // padding: EdgeInsets.fromLTRB(3, 3, 3 + margin, 3),
       padding: const EdgeInsets.all(8).copyWith(right: margin),
-      child: Container(
-        height: PLACEHOLDER_SIZE,
-        color: Colors.black26,
-      ),
+      child: Container(height: PLACEHOLDER_SIZE, color: Colors.black26),
     );
   }
 
@@ -148,8 +146,7 @@ class _TraceViewState extends State<TraceView> {
           thumbDrawColor: Colors.grey,
           thumbHeight: 48,
           placeholderBuilder: (context, index) => buildPlaceholder(),
-          waitBuilder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          waitBuilder: (context) => const Center(child: CircularProgressIndicator()),
           emptyBuilder: (context) => const Text("empty :)"),
           firstShown: (index) {},
           scrollDirection: Axis.vertical,

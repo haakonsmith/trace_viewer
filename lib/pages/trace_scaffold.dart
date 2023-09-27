@@ -3,6 +3,20 @@ import 'package:flutter/material.dart';
 import 'package:trace_viewer/models/can_trace/can_trace.dart';
 import 'package:trace_viewer/models/can_trace/importer/base_importer.dart';
 import 'package:trace_viewer/pages/trace_view.dart';
+import 'package:trace_viewer/utils/db.dart';
+import 'package:xqflite/xqflite.dart' as xqflite;
+
+xqflite.Table buildTable(int index) {
+  return xqflite.Table.builder("data_$index") //
+      .primaryKey('id')
+      .integer('rx_id')
+      .integer('multi_line')
+      .real('time_offset')
+      .integer('message_number')
+      .bytes('data')
+      .integer('parent', nullable: true)
+      .build();
+}
 
 class TraceScaffold extends StatefulWidget {
   const TraceScaffold({super.key});
@@ -13,6 +27,7 @@ class TraceScaffold extends StatefulWidget {
 
 class _TraceScaffoldState extends State<TraceScaffold> {
   CanTrace? trace;
+  int i = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -55,8 +70,16 @@ class _TraceScaffoldState extends State<TraceScaffold> {
           }
 
           final watch = Stopwatch()..start();
+          await XDatabase.instance.addTable(buildTable(i));
 
           final traceResult = importer.parse(file.name);
+
+          for (final message in traceResult.$1.messages.take(100)) {
+            await XDatabase.instance.data(i).insert(message);
+          }
+
+          i++;
+
           watch.stop();
 
           if (mounted) {
