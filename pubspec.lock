@@ -187,10 +187,9 @@ packages:
   huge_listview:
     dependency: "direct main"
     description:
-      name: huge_listview
-      sha256: "1508921c1e815a8ccf095ef63335779aa0a3a2609b768cf2d00edb3ef7e65087"
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/huge_listview"
+      relative: true
+    source: path
     version: "2.0.11"
   js:
     dependency: transitive

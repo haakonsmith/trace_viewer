@@ -16,12 +16,12 @@ dependencies:
   cupertino_icons: ^1.0.2
   oxidized: ^6.1.0
   desktop_drop: ^0.4.3
-  huge_listview: ^2.0.11
+  # huge_listview: ^2.0.11
   quiver: ^3.2.1
   google_fonts: ^6.1.0
   collection: ^1.17.2
-  # huge_listview:
-  #   path: "packages/huge_listview"
+  huge_listview:
+    path: "packages/huge_listview"
   xqflite:
     path: "../xqflite"
   ffi: ^2.1.0

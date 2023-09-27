@@ -209,7 +209,7 @@ class _TraceViewState extends State<TraceView> {
     );
   }
 
-  Future<List<TraceItem>> _loadPage(int page, int pageSize) async {
+  List<TraceItem> _loadPage(int page, int pageSize) {
     int from = page * pageSize;
 
     // print(logicalToRealIndexMap);
@@ -244,6 +244,7 @@ class _TraceViewState extends State<TraceView> {
           listViewController: listViewController,
           pageSize: pageSize,
           startIndex: 0,
+          velocityThreshold: 0.1,
           pageFuture: (page) => _loadPage(page, pageSize),
           lruMap: lruMap,
           // scrollableCountGetter: () => openItems,

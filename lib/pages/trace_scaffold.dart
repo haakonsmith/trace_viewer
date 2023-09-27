@@ -5,7 +5,6 @@ import 'package:trace_viewer/models/can_trace/can_trace.dart';
 import 'package:trace_viewer/models/can_trace/importer/base_importer.dart';
 import 'package:trace_viewer/pages/trace_view.dart';
 import 'package:trace_viewer/utils/db.dart';
-import 'package:trace_viewer/utils/scaffold_messenger_extension.dart';
 import 'package:trace_viewer/widgets/trace_search.dart';
 import 'package:xqflite/xqflite.dart' as xqflite;
 
@@ -131,7 +130,7 @@ class _TraceScaffoldState extends State<TraceScaffold> {
 
           final traceResult = importer.parse(file.name);
 
-          for (final message in traceResult.$1.messages.take(100)) {
+          for (final message in traceResult.$1.messages) {
             await XDatabase.instance.data(i).insert(message);
           }
 
