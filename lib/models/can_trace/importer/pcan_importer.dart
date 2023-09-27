@@ -130,8 +130,7 @@ final class PcanImporter extends TraceImporter {
     for (var i = 0; i < size; i++) {
       final line = lineIterator[i];
 
-      final (messageNumber, timeOffset, _, id, dataLength, data) =
-          _parseLine(line);
+      final (messageNumber, timeOffset, _, id, dataLength, data) = _parseLine(line);
 
       final parsedData = data.parseBytes();
 
@@ -141,12 +140,7 @@ final class PcanImporter extends TraceImporter {
       }
 
       final firstByte = int.parse(data.substring(0, 2), radix: 16);
-      final nextFirstByte = size > i + 1
-          ? _parseLine(lineIterator.elementAt(i + 1))
-              .$6
-              .substring(0, 2)
-              .map((value) => int.parse(value, radix: 16))
-          : null;
+      final nextFirstByte = size > i + 1 ? _parseLine(lineIterator[i + 1]).$6.substring(0, 2).map((value) => int.parse(value, radix: 16)) : null;
 
       if (nextFirstByte == 0x30) {
         multiLineCounter = 0;

@@ -19,9 +19,14 @@ dependencies:
   huge_listview: ^2.0.11
   quiver: ^3.2.1
   google_fonts: ^6.1.0
+  collection: ^1.17.2
+  # huge_listview:
+  #   path: "packages/huge_listview"
   xqflite:
     path: "../xqflite"
   ffi: ^2.1.0
+  scrollable_positioned_list:
+  mask_text_input_formatter: ^2.5.0
 
 dev_dependencies:
   flutter_test:

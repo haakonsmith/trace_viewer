@@ -50,6 +50,7 @@ class CanMessage {
       'time_offset': timeOffset,
       'message_number': messageNumber,
       'parent': parent,
+      'formatted_data': data.map((e) => e.toRadixString(16).padLeft(2, '0')).join(' '),
     };
   }
 
@@ -73,21 +74,11 @@ class CanMessage {
   bool operator ==(covariant CanMessage other) {
     if (identical(this, other)) return true;
 
-    return other.rxId == rxId &&
-        other.multiLine == multiLine &&
-        other.data == data &&
-        other.timeOffset == timeOffset &&
-        other.messageNumber == messageNumber &&
-        other.parent == parent;
+    return other.rxId == rxId && other.multiLine == multiLine && other.data == data && other.timeOffset == timeOffset && other.messageNumber == messageNumber && other.parent == parent;
   }
 
   @override
   int get hashCode {
-    return rxId.hashCode ^
-        multiLine.hashCode ^
-        data.hashCode ^
-        timeOffset.hashCode ^
-        messageNumber.hashCode ^
-        parent.hashCode;
+    return rxId.hashCode ^ multiLine.hashCode ^ data.hashCode ^ timeOffset.hashCode ^ messageNumber.hashCode ^ parent.hashCode;
   }
 }
