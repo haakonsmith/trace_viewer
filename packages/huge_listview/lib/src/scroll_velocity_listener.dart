@@ -23,6 +23,7 @@ class ScrollVelocityListener extends StatefulWidget {
   final Widget child;
 
   const ScrollVelocityListener({
+    super.key,
     required this.onVelocity,
     required this.child,
   });
@@ -42,6 +43,7 @@ class _ScrollVelocityListenerState extends State<ScrollVelocityListener> {
       onNotification: (notification) {
         final now = DateTime.now();
         final timeDiff = now.millisecondsSinceEpoch - lastMilli;
+
         if (notification is ScrollUpdateNotification) {
           final pixelsPerMilli = notification.scrollDelta! / timeDiff;
 
@@ -51,7 +53,6 @@ class _ScrollVelocityListenerState extends State<ScrollVelocityListener> {
         }
 
         if (notification is ScrollEndNotification && lastVelocity != 0) {
-          // Future.delayed(const Duration())
           debouncer.run(() {
             widget.onVelocity(0);
             lastVelocity = 0;

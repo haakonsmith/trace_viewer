@@ -33,6 +33,7 @@ class _TraceScaffoldState extends State<TraceScaffold> {
   ItemScrollController? controller;
   TraceViewDataController? dataController;
   int i = 0;
+  bool _ingesting = false;
 
   @override
   Widget build(BuildContext context) {
@@ -47,43 +48,44 @@ class _TraceScaffoldState extends State<TraceScaffold> {
           controller: controller,
           dataController: dataController,
         ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          left: 1000,
-          child: TraceSearch(
-            onSearch: (data) {
-              // print(
-              //   data.data //
-              //       .map((e) => e.toRadixString(16).padLeft(2, "0"))
-              //       .join(),
-              // );
-              XDatabase.instance
-                  .data(i) //
-                  .query(
-                    xqflite.Query.contains(
-                        // 'hex(data)',
-                        'formatted_data',
-                        data.data //
-                            .map((e) => e.toRadixString(16).padLeft(2, '0'))
-                            .join(' ')),
-                  )
-                  .then((value) {
-                if (value.isEmpty) return;
-
-                final index = value.first.messageNumber;
-
-                // dataController?.setExpaned(index, true);
-                dataController?.goToItemId(index);
-                // controller?.scrollTo(
-                //   index: index,
-                //   alignment: 0.5,
-                //   duration: const Duration(milliseconds: 160),
+        if (_ingesting) const Positioned(child: LinearProgressIndicator()),
+        if (!_ingesting)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: TraceSearch(
+              onSearch: (data) {
+                // print(
+                //   data.data //
+                //       .map((e) => e.toRadixString(16).padLeft(2, "0"))
+                //       .join(),
                 // );
-              });
-            },
+                XDatabase.instance
+                    .data(i) //
+                    .query(
+                      xqflite.Query.contains(
+                          // 'hex(data)',
+                          'formatted_data',
+                          data.data //
+                              .map((e) => e.toRadixString(16).padLeft(2, '0'))
+                              .join(' ')),
+                    )
+                    .then((value) {
+                  if (value.isEmpty) return;
+
+                  final index = value.first.messageNumber;
+
+                  // dataController?.setExpaned(index, true);
+                  dataController?.goToItemId(index);
+                  // controller?.scrollTo(
+                  //   index: index,
+                  //   alignment: 0.5,
+                  //   duration: const Duration(milliseconds: 160),
+                  // );
+                });
+              },
+            ),
           ),
-        ),
       ]);
     }
 
@@ -130,9 +132,14 @@ class _TraceScaffoldState extends State<TraceScaffold> {
 
           final traceResult = importer.parse(file.name);
 
-          for (final message in traceResult.$1.messages) {
-            await XDatabase.instance.data(i).insert(message);
-          }
+          _ingesting = true;
+          XDatabase.instance.data(i).batch((batch) {
+            for (final message in traceResult.$1.messages) {
+              batch.insert(message);
+            }
+          }).whenComplete(() {
+            if (mounted) setState(() => _ingesting = false);
+          });
 
           watch.stop();
 

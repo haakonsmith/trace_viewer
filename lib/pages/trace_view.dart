@@ -76,12 +76,10 @@ class _TraceViewState extends State<TraceView> {
     logicalToRealIndexMap = _generateReverseMapping();
     realToLogicalIndexMap = logicalToRealIndexMap.inverse;
 
-    listViewController = HugeListViewController(
-        totalItemCount: logicalToRealIndexMap.keys.length);
+    listViewController = HugeListViewController(totalItemCount: logicalToRealIndexMap.keys.length);
     scroll = widget.controller ?? ItemScrollController();
 
-    widget.dataController?.dataSetter =
-        (index, expanded) => setState(() => data[index].visible = expanded);
+    widget.dataController?.dataSetter = (index, expanded) => setState(() => data[index].visible = expanded);
     widget.dataController?.dataGetter = (index) => data[index];
     widget.dataController?.itemIdVisitor = (id) {
       print(data[id].message);
@@ -141,15 +139,12 @@ class _TraceViewState extends State<TraceView> {
   }
 
   BiMap<int, int> _generateReverseMapping() {
-    // var total = 0;
     final BiMap<int, int> mapping = BiMap();
 
     var skipped = 0;
+    final openItems = countOpenItems();
 
-    for (var i = 0; i < countOpenItems(); i++) {
-      // if (data[i].visible) mapping[i] = data[i].message.messageNumber;
-      // else tracker++;
-
+    for (var i = 0; i < openItems; i++) {
       var nextVisibleIndex = i + skipped;
 
       for (var i = nextVisibleIndex; i < data.length; i++) {
@@ -162,12 +157,6 @@ class _TraceViewState extends State<TraceView> {
       }
 
       mapping[i] = nextVisibleIndex;
-
-      // if (data[i].expanded) realToLogicalIndexMap[data[i].message.messageNumber] = i;
-      // if (data[i].visible) {
-      //   realToLogicalIndexMap[i] = j;
-      //   j++;
-      // }
     }
 
     return mapping;
@@ -178,12 +167,6 @@ class _TraceViewState extends State<TraceView> {
     final List<TraceItem> result = [];
 
     for (var i = 0; i < messages.length; i++) {
-      // if (messages.length - i > 2) {
-      //   result.add(TraceItem(messages[i], messages[i].parent == null));
-      // } else {
-      //   result.add(TraceItem(
-      //       messages[i], messages[i].parent == null));
-      // }
       result.add(TraceItem(messages[i], messages[i].parent == null));
     }
 
@@ -212,12 +195,8 @@ class _TraceViewState extends State<TraceView> {
   List<TraceItem> _loadPage(int page, int pageSize) {
     int from = page * pageSize;
 
-    // print(logicalToRealIndexMap);
-
     int to = min(logicalToRealIndexMap.keys.length, from + pageSize);
     final List<TraceItem> result = [];
-
-    // print(logicalToRealIndexMap.keys.toList().sorted((a, b) => a - b,));
 
     for (var i = from; i < to; i++) {
       final id = logicalToRealIndexMap[i]!;
@@ -225,11 +204,7 @@ class _TraceViewState extends State<TraceView> {
       result.add(data[id]);
     }
 
-    // print(result);
-
     return result;
-
-    // return data.sublist(from, to);
   }
 
   @override
@@ -270,8 +245,7 @@ class _TraceViewState extends State<TraceView> {
               child: Row(
                 children: [
                   CanMessageView(message: message),
-                  if (data.elementAtOrNull(id + 1)?.message.parent != null &&
-                      message.parent == null) //
+                  if (data.elementAtOrNull(id + 1)?.message.parent != null && message.parent == null) //
 
                     SizedBox(
                       height: 32,
@@ -292,8 +266,7 @@ class _TraceViewState extends State<TraceView> {
                           setState(() {
                             // openItems = countOpenItems();
                             logicalToRealIndexMap = _generateReverseMapping();
-                            listViewController.totalItemCount =
-                                logicalToRealIndexMap.keys.length;
+                            listViewController.totalItemCount = logicalToRealIndexMap.keys.length;
                             listViewController.invalidateList(true);
                           });
                         },
@@ -323,8 +296,7 @@ class _TraceViewState extends State<TraceView> {
               child: Row(
                 children: [
                   CanMessageView(message: message),
-                  if (data.elementAtOrNull(index + 1)?.message.parent != null &&
-                      message.parent == null) //
+                  if (data.elementAtOrNull(index + 1)?.message.parent != null && message.parent == null) //
 
                     SizedBox(
                       height: 32,
@@ -388,8 +360,7 @@ class _TraceViewState extends State<TraceView> {
           thumbDrawColor: Colors.grey,
           thumbHeight: 48,
           placeholderBuilder: (context, index) => buildPlaceholder(),
-          waitBuilder: (context) =>
-              const Center(child: CircularProgressIndicator()),
+          waitBuilder: (context) => const Center(child: CircularProgressIndicator()),
           emptyBuilder: (context) => const Text("empty :)"),
           firstShown: (index) {},
           scrollDirection: Axis.vertical,

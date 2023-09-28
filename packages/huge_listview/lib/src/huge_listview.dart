@@ -151,8 +151,7 @@ class HugeListViewState<T> extends State<HugeListView<T>> {
   void initState() {
     super.initState();
 
-    listViewController =
-        widget.listViewController ?? HugeListViewController(totalItemCount: widget.totalCount ?? -1 >>> 1); // =int.MAX, temporarily until `totalCount` removed
+    listViewController = widget.listViewController ?? HugeListViewController(totalItemCount: widget.totalCount ?? -1 >>> 1); // =int.MAX, temporarily until `totalCount` removed
     listViewController.addListener(onChange);
     totalItemCount = listViewController.totalItemCount;
 
@@ -179,7 +178,6 @@ class HugeListViewState<T> extends State<HugeListView<T>> {
     }
   }
 
-  // int lastCurrent = 0;
   Debouncer debouncer = Debouncer(milliseconds: 20);
 
   void _sendScroll() {
@@ -191,7 +189,6 @@ class HugeListViewState<T> extends State<HugeListView<T>> {
 
     debouncer.run(() {
       velocity = 0;
-      _doReload(0);
     });
   }
 
@@ -203,33 +200,7 @@ class HugeListViewState<T> extends State<HugeListView<T>> {
     }
   }
 
-  // int get itemCount => widget.scrollableCountGetter?.call() ?? totalItemCount;
-
-  // final key = GlobalKey();
-  final controller = ScrollOffsetController();
-
   double velocity = 0;
-
-  bool _onScroll(ScrollNotification notification) {
-    // final now = DateTime.now();
-    // final timeDiff = now.millisecondsSinceEpoch - lastMilli;
-    // if (notification is ScrollUpdateNotification) {
-    //   final pixelsPerMilli = notification.scrollDelta! / timeDiff;
-
-    //   widget.onVelocity(
-    //     pixelsPerMilli,
-    //   );
-    //   lastMilli = DateTime.now().millisecondsSinceEpoch;
-    // }
-
-    // if (notification is ScrollEndNotification) {
-    //   widget.onVelocity(0);
-    //   lastMilli = DateTime.now().millisecondsSinceEpoch;
-    // }
-
-    // return true;
-    return false;
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -237,73 +208,68 @@ class HugeListViewState<T> extends State<HugeListView<T>> {
     if (totalItemCount == -1 && widget.waitBuilder != null) return widget.waitBuilder!(context);
     if (totalItemCount == 0 && widget.emptyBuilder != null) return widget.emptyBuilder!(context);
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return DraggableScrollbar(
-          key: scrollKey,
-          totalCount: totalItemCount,
-          initialScrollIndex: widget.startIndex,
-          scrollDirection: widget.scrollDirection,
-          onChange: (position) {
-            widget.scrollController?.jumpTo(index: (position * totalItemCount).floor());
-          },
-          scrollThumbBuilder: widget.thumbBuilder,
-          backgroundColor: widget.thumbBackgroundColor,
-          drawColor: widget.thumbDrawColor,
-          heightScrollThumb: widget.thumbHeight,
-          currentFirstIndex: _currentFirst(),
-          alwaysVisibleThumb: widget.alwaysVisibleThumb,
-          thumbAnimationDuration: widget.thumbAnimationDuration,
-          thumbVisibleDuration: widget.thumbVisibleDuration,
-          child: ScrollVelocityListener(
-            onVelocity: (p0) {
-              print(p0);
-              velocity = p0;
-            },
-            child: ScrollablePositionedList.builder(
-              padding: widget.padding,
-              itemScrollController: widget.scrollController ?? widget.controller,
-              itemPositionsListener: listener,
-              scrollDirection: widget.scrollDirection,
-              physics: _MaxVelocityPhysics(velocityThreshold: widget.velocityThreshold),
-              initialScrollIndex: widget.startIndex,
-              itemCount: max(totalItemCount, 0),
-              itemBuilder: (context, index) {
-                final page = index ~/ widget.pageSize;
-
-                if (velocity.abs() > 20 && !map.containsKey(page)) {
-                  if (!_frameCallbackInProgress) {
-                    _frameCallbackInProgress = true;
-                    SchedulerBinding.instance.scheduleFrameCallback((d) => _deferredReload(context));
-                  }
-
-                  return ConstrainedBox(
-                    constraints: const BoxConstraints(minHeight: 10),
-                    child: widget.placeholderBuilder(context, index),
-                  );
-                }
-
-                map.putIfAbsent(page, () => _loadPage(page));
-
-                final pageResult = map[page];
-                final valueIndex = index % widget.pageSize;
-
-                if (pageResult != null && pageResult.items.length > valueIndex) {
-                  final value = pageResult.items.elementAt(valueIndex);
-                  if (value != null) {
-                    return widget.itemBuilder(context, index, value);
-                  }
-                }
-
-                return ConstrainedBox(
-                  constraints: const BoxConstraints(minHeight: 10),
-                  child: widget.placeholderBuilder(context, index),
-                );
-              },
-            ),
-          ),
-        );
+    return DraggableScrollbar(
+      key: scrollKey,
+      totalCount: totalItemCount,
+      initialScrollIndex: widget.startIndex,
+      scrollDirection: widget.scrollDirection,
+      onChange: (position) {
+        widget.scrollController?.jumpTo(index: (position * totalItemCount).floor());
       },
+      scrollThumbBuilder: widget.thumbBuilder,
+      backgroundColor: widget.thumbBackgroundColor,
+      drawColor: widget.thumbDrawColor,
+      heightScrollThumb: widget.thumbHeight,
+      currentFirstIndex: _currentFirst(),
+      alwaysVisibleThumb: widget.alwaysVisibleThumb,
+      thumbAnimationDuration: widget.thumbAnimationDuration,
+      thumbVisibleDuration: widget.thumbVisibleDuration,
+      child: ScrollVelocityListener(
+        onVelocity: (p0) {
+          velocity = p0;
+        },
+        child: ScrollablePositionedList.builder(
+          padding: widget.padding,
+          itemScrollController: widget.scrollController ?? widget.controller,
+          itemPositionsListener: listener,
+          scrollDirection: widget.scrollDirection,
+          physics: _MaxVelocityPhysics(velocityThreshold: widget.velocityThreshold),
+          initialScrollIndex: widget.startIndex,
+          itemCount: max(totalItemCount, 0),
+          itemBuilder: (context, index) {
+            final page = index ~/ widget.pageSize;
+
+            if (velocity.abs() > 20 && !map.containsKey(page)) {
+              if (!_frameCallbackInProgress) {
+                _frameCallbackInProgress = true;
+                SchedulerBinding.instance.scheduleFrameCallback((d) => _deferredReload(context));
+              }
+
+              return ConstrainedBox(
+                constraints: const BoxConstraints(minHeight: 10),
+                child: widget.placeholderBuilder(context, index),
+              );
+            }
+
+            map.putIfAbsent(page, () => _loadPage(page));
+
+            final pageResult = map[page];
+            final valueIndex = index % widget.pageSize;
+
+            if (pageResult != null && pageResult.items.length > valueIndex) {
+              final value = pageResult.items.elementAt(valueIndex);
+              if (value != null) {
+                return widget.itemBuilder(context, index, value);
+              }
+            }
+
+            return ConstrainedBox(
+              constraints: const BoxConstraints(minHeight: 10),
+              child: ColoredBox(color: Colors.red),
+            );
+          },
+        ),
+      ),
     );
   }
 
@@ -341,7 +307,6 @@ class HugeListViewState<T> extends State<HugeListView<T>> {
   }
 
   void _deferredReload(BuildContext context) {
-    // if (!Scrollable.recommendDeferredLoadingForContext(context)) {
     if (velocity.abs() < 20) {
       _frameCallbackInProgress = false;
       _doReload(-1);
