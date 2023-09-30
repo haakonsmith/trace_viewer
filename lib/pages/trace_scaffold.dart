@@ -1,6 +1,9 @@
+import 'dart:isolate';
+
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import 'package:trace_viewer/models/can_trace/can_message.dart';
 import 'package:trace_viewer/models/can_trace/can_trace.dart';
 import 'package:trace_viewer/models/can_trace/importer/base_importer.dart';
 import 'package:trace_viewer/pages/trace_view.dart';
@@ -55,16 +58,51 @@ class _TraceScaffoldState extends State<TraceScaffold> {
             bottom: 0,
             child: TraceSearch(
               onSearch: (data) {
-                // print(
-                //   data.data //
-                //       .map((e) => e.toRadixString(16).padLeft(2, "0"))
-                //       .join(),
-                // );
+                // final List<CanMessage> result = [];
+
+                // for (final message in trace!.messages) {
+                //   var found = true;
+                //   // var offset = -1;
+                //   var startByte = -1;
+
+                //   // for (final byte in data.data) {
+                //   for (var i = 0; i < data.data.length; i++) {
+                //     if (startByte == -1 && data.data[0] == message.data[i]) startByte = i;
+
+                //     if (startByte != -1) {
+                //       if (message.data[i] != data.data[i - startByte]) {
+                //         found = false;
+                //         break;
+                //       }
+                //     }
+                //   }
+
+                //   // for (final byte in message.data) {
+                //   // for (var i = 0; i < message.data.length; i++) {
+                //   //   if (offset > 0) {
+                //   //     if (message.data[i] != data.data[i - offset]) {
+                //   //       found = false;
+                //   //       break;
+                //   //     }
+                //   //   } else {
+                //   //     if (message.data[i] == data.data[0]) {
+                //   //       offset = i;
+                //   //     }
+                //   //   }
+                //   // }
+
+                //   if (found) {
+                //     result.add(message);
+                //   }
+                // }
+                // print(result);
+
+                // dataController?.goToItemId(result.first.messageNumber);
+
                 XDatabase.instance
                     .data(i) //
                     .query(
                       xqflite.Query.contains(
-                          // 'hex(data)',
                           'formatted_data',
                           data.data //
                               .map((e) => e.toRadixString(16).padLeft(2, '0'))
@@ -75,13 +113,7 @@ class _TraceScaffoldState extends State<TraceScaffold> {
 
                   final index = value.first.messageNumber;
 
-                  // dataController?.setExpaned(index, true);
                   dataController?.goToItemId(index);
-                  // controller?.scrollTo(
-                  //   index: index,
-                  //   alignment: 0.5,
-                  //   duration: const Duration(milliseconds: 160),
-                  // );
                 });
               },
             ),
@@ -130,15 +162,20 @@ class _TraceScaffoldState extends State<TraceScaffold> {
           final watch = Stopwatch()..start();
           await XDatabase.instance.addTable(buildTable(i));
 
-          final traceResult = importer.parse(file.name);
+          setState(() {
+            _ingesting = true;
+          });
 
-          _ingesting = true;
-          XDatabase.instance.data(i).batch((batch) {
-            for (final message in traceResult.$1.messages) {
-              batch.insert(message);
-            }
-          }).whenComplete(() {
-            if (mounted) setState(() => _ingesting = false);
+          final (messages, _) = await importer.parseAsync();
+
+          Isolate.run(() {
+            XDatabase.instance.data(i).batch((batch) {
+              for (final message in messages) {
+                batch.insert(message);
+              }
+            }).whenComplete(() {
+              if (mounted) setState(() => _ingesting = false);
+            });
           });
 
           watch.stop();
@@ -150,7 +187,7 @@ class _TraceScaffoldState extends State<TraceScaffold> {
           }
 
           setState(() {
-            trace = traceResult.$1;
+            trace = CanTrace(messages: messages, name: file.name);
             controller = ItemScrollController();
             dataController = TraceViewDataController();
           });

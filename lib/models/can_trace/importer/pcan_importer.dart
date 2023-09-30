@@ -1,7 +1,9 @@
+import 'dart:isolate';
+import 'dart:math';
+
+import 'package:flutter/foundation.dart';
 import 'package:trace_viewer/models/can_trace/can_message.dart';
-import 'package:trace_viewer/models/can_trace/can_trace.dart';
 import 'package:trace_viewer/models/can_trace/importer/base_importer.dart';
-import 'package:trace_viewer/utils/nullable_extension.dart';
 import 'package:trace_viewer/utils/string_extension.dart';
 
 final class PcanImporter extends TraceImporter {
@@ -115,85 +117,118 @@ final class PcanImporter extends TraceImporter {
     );
   }
 
-  @override
-  (CanTrace, List<(int, Exception)>) parse(String name) {
-    final lineIterator = data.trimRight().split('\n').sublist(14);
-
+  ParseResult parseLines(List<String> lines) {
     final List<CanMessage> messages = [];
     final List<(int, Exception)> errors = [];
 
     int multiLineCounter = -1;
     int parentIndex = -1;
 
-    final size = lineIterator.length;
+    final size = lines.length;
 
     for (var i = 0; i < size; i++) {
-      final line = lineIterator[i];
+      try {
+        final line = lines[i];
 
-      final (messageNumber, timeOffset, _, id, dataLength, data) = _parseLine(line);
+        final (__, timeOffset, _, id, dataLength, data) = _parseLine(line);
 
-      final parsedData = data.parseBytes();
+        final parsedData = data.parseBytes(int.parse(dataLength));
 
-      if (parsedData.isErr()) {
-        errors.add((int.parse(messageNumber), parsedData.unwrapErr()));
-        continue;
-      }
+        final firstByte = parsedData[0];
+        final nextFirstByte = size > i + 1 //
+            ? int.parse(_parseLine(lines[i + 1]).$6.substring(0, 2), radix: 16)
+            : null;
 
-      final firstByte = int.parse(data.substring(0, 2), radix: 16);
-      final nextFirstByte = size > i + 1 ? _parseLine(lineIterator[i + 1]).$6.substring(0, 2).map((value) => int.parse(value, radix: 16)) : null;
-
-      if (nextFirstByte == 0x30) {
-        multiLineCounter = 0;
-        parentIndex = i;
-
-        messages.add(CanMessage(
-          rxId: int.parse(id, radix: 16),
-          data: parsedData.unwrap(),
-          timeOffset: double.parse(timeOffset),
-          multiLine: true,
-          messageNumber: i,
-        ));
-      } else if (multiLineCounter == 0 && firstByte == 0x30) {
-        multiLineCounter += 1;
-
-        messages.add(CanMessage(
-          rxId: int.parse(id, radix: 16),
-          data: parsedData.unwrap(),
-          timeOffset: double.parse(timeOffset),
-          multiLine: false,
-          messageNumber: i,
-          parent: parentIndex,
-        ));
-      } else if (firstByte == multiLineCounter + 0x20) {
-        multiLineCounter += 1;
-
-        messages.add(CanMessage(
-          rxId: int.parse(id, radix: 16),
-          data: parsedData.unwrap(),
-          timeOffset: double.parse(timeOffset),
-          multiLine: false,
-          messageNumber: i,
-          parent: parentIndex,
-        ));
-
-        if (multiLineCounter == 0x10) {
+        if (nextFirstByte == 0x30) {
           multiLineCounter = 0;
+          parentIndex = i;
+
+          messages.add(CanMessage(
+            rxId: int.parse(id, radix: 16),
+            data: parsedData,
+            timeOffset: double.parse(timeOffset),
+            multiLine: true,
+            messageNumber: i,
+          ));
+        } else if (multiLineCounter == 0 && firstByte == 0x30) {
+          multiLineCounter += 1;
+
+          messages.add(CanMessage(
+            rxId: int.parse(id, radix: 16),
+            data: parsedData,
+            timeOffset: double.parse(timeOffset),
+            multiLine: false,
+            messageNumber: i,
+            parent: parentIndex,
+          ));
+        } else if (firstByte == multiLineCounter + 0x20) {
+          multiLineCounter += 1;
+
+          messages.add(CanMessage(
+            rxId: int.parse(id, radix: 16),
+            data: parsedData,
+            timeOffset: double.parse(timeOffset),
+            multiLine: false,
+            messageNumber: i,
+            parent: parentIndex,
+          ));
+
+          if (multiLineCounter == 0x10) {
+            multiLineCounter = 0;
+          }
+        } else {
+          multiLineCounter = -1;
+
+          messages.add(CanMessage(
+            rxId: int.parse(id, radix: 16),
+            data: parsedData,
+            multiLine: false,
+            timeOffset: double.parse(timeOffset),
+            messageNumber: i,
+          ));
         }
-      } else {
-        multiLineCounter = -1;
-
-        messages.add(CanMessage(
-          rxId: int.parse(id, radix: 16),
-          data: parsedData.unwrap(),
-          multiLine: false,
-          timeOffset: double.parse(timeOffset),
-          messageNumber: i,
-        ));
+      } on Exception catch (e) {
+        errors.add((i, e));
       }
-
-      // i += 1;
     }
 
-    return (CanTrace(messages: messages, name: name), errors);
+    return (messages, errors);
+  }
+
+  @override
+  (List<CanMessage>, List<(int, Exception)>) parse() {
+    return parseLines(data.trim().split('\n').sublist(14));
+  }
+
+  @override
+  Future<ParseResult> parseAsync() async {
+    final lines = data.trim().split('\n').sublist(14);
+    final futures = <Future<ParseResult>>[];
+
+    const isloateCount = 2;
+
+    final lineLength = lines.length;
+    final chunkSize = (lineLength / isloateCount).ceil();
+
+    for (var i = 0; i < lineLength; i += chunkSize) {
+      futures.add(
+      //   compute(
+      //   parseLines,
+      //   lines.sublist(i, min<int>(i + chunkSize, lineLength)),
+      // )
+          Isolate.run(() {
+            return parseLines(lines.sublist(i, min<int>(i + chunkSize, lineLength)));
+          }),
+          );
+    }
+
+    final results = await Future.wait(futures);
+
+    for (final result in results.sublist(1)) {
+      results[0].$1.addAll(result.$1);
+      results[0].$2.addAll(result.$2);
+    }
+
+    return results[0];
   }
 }

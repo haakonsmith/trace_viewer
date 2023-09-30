@@ -3,12 +3,42 @@ import 'dart:typed_data';
 import 'package:oxidized/oxidized.dart';
 
 extension LazyList on String {
-  Result<Uint8List, Exception> parseBytes() {
-    return Result<Uint8List, Exception>.of(() {
-      return Uint8List.fromList(trim().split(' ').map((e) {
-        return int.parse(e, radix: 16);
-      }).toList());
-    });
+  Uint8List parseBytes(int byteCount) {
+    final result = Uint8List(byteCount);
+    var count = 0;
+    int lastFound = -1;
+
+    // -50ms
+    for (var i = 0; i < length; i++) {
+      final char = this[i];
+
+      if (char == ' ') {
+        if (lastFound != -1) {
+          result[count++] = int.parse(substring(lastFound, i), radix: 16);
+        }
+
+        lastFound = -1;
+        continue;
+      }
+
+      if (char != ' ' && lastFound == -1) {
+        lastFound = i;
+      }
+    }
+
+    return result;
+
+    // -50ms
+    // final stringBytes = trim().split(' ');
+    // final result = Uint8List(stringBytes.length);
+
+    // for (var i = 0; i < stringBytes.length; i++) {
+    //   result[i] = int.parse(stringBytes[i], radix: 16);
+    // }
+
+    // return result;
+
+    // return Uint8List.fromList(trim().split(' ').map((e) => int.parse(e, radix: 16)).toList());
   }
 
   Iterable<String> lazySplit(String splitChar) sync* {

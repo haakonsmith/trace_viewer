@@ -72,7 +72,6 @@ class _TraceViewState extends State<TraceView> {
 
     data = _getData();
 
-    // openItems = countOpenItems();
     logicalToRealIndexMap = _generateReverseMapping();
     realToLogicalIndexMap = logicalToRealIndexMap.inverse;
 
@@ -82,7 +81,6 @@ class _TraceViewState extends State<TraceView> {
     widget.dataController?.dataSetter = (index, expanded) => setState(() => data[index].visible = expanded);
     widget.dataController?.dataGetter = (index) => data[index];
     widget.dataController?.itemIdVisitor = (id) {
-      print(data[id].message);
       realToLogicalIndexMap = logicalToRealIndexMap.inverse;
 
       if (realToLogicalIndexMap[id] == null) {
@@ -109,33 +107,10 @@ class _TraceViewState extends State<TraceView> {
 
           lastSmallest = keys[i];
         }
-        // for (var element in realToLogicalIndexMap.keys) {
-
-        // }
-        // for (var i = 0; i < realToLogicalIndexMap.; i++) {
-
-        // }
       } else {
         scroll.jumpTo(index: realToLogicalIndexMap[id]!);
       }
     };
-  }
-
-  BiMap<int, int> _generateMapping() {
-    // var total = 0;
-    final BiMap<int, int> realToLogicalIndexMap = BiMap();
-
-    var j = 0;
-
-    for (var i = 0; i < data.length; i++) {
-      // if (data[i].expanded) realToLogicalIndexMap[data[i].message.messageNumber] = i;
-      if (data[i].visible) {
-        realToLogicalIndexMap[i] = j;
-        j++;
-      }
-    }
-
-    return realToLogicalIndexMap;
   }
 
   BiMap<int, int> _generateReverseMapping() {
@@ -211,161 +186,78 @@ class _TraceViewState extends State<TraceView> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(right: 8.0),
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: HugeListView<TraceItem>(
-          key: listKey,
-          scrollController: scroll,
-          listViewController: listViewController,
-          pageSize: pageSize,
-          startIndex: 0,
-          velocityThreshold: 0.1,
-          pageFuture: (page) => _loadPage(page, pageSize),
-          lruMap: lruMap,
-          // scrollableCountGetter: () => openItems,
+      child: SelectionArea(
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: HugeListView<TraceItem>(
+            key: listKey,
+            scrollController: scroll,
+            listViewController: listViewController,
+            pageSize: pageSize,
+            startIndex: 0,
+            velocityThreshold: 0.1,
+            pageFuture: (page) => _loadPage(page, pageSize),
+            lruMap: lruMap,
+            itemBuilder: (context, index, TraceItem item) {
+              final message = item.message;
 
-          itemBuilder: (context, index, TraceItem item) {
-            final message = item.message;
-            final visible = item.visible;
+              final id = message.messageNumber;
 
-            final id = message.messageNumber;
-
-            // realToLogicalIndexMap[id] = index;
-
-            if (!controllers.containsKey(id)) {
-              controllers[id] = CustomExpansionTileController();
-              keys[id] = GlobalKey();
-            }
-
-            // if (index == 14) print(message);
-            // if (index == 14) print(visible);
-
-            return Padding(
-              padding: const EdgeInsets.all(6.0).copyWith(left: message.parent == null ? 0 : 40),
-              child: Row(
-                children: [
-                  CanMessageView(message: message),
-                  if (data.elementAtOrNull(id + 1)?.message.parent != null && message.parent == null) //
-
-                    SizedBox(
-                      height: 32,
-                      child: IconButton(
-                        onPressed: () {
-                          // data[id].visible = !data[id].visible;
-
-                          var i = id + 2;
-
-                          data[id + 1].visible = !data[id + 1].visible;
-
-                          while (data[i].message.parent == id) {
-                            data[i].visible = data[id + 1].visible;
-
-                            i++;
-                          }
-
-                          setState(() {
-                            // openItems = countOpenItems();
-                            logicalToRealIndexMap = _generateReverseMapping();
-                            listViewController.totalItemCount = logicalToRealIndexMap.keys.length;
-                            listViewController.invalidateList(true);
-                          });
-                        },
-                        icon: const Icon(Icons.unfold_more),
-                        selectedIcon: const Icon(Icons.unfold_less),
-                        isSelected: !data[id + 1].visible,
-                        splashRadius: 16,
-                        iconSize: 16,
-                      ),
-                    ),
-                ],
-              ),
-            );
-
-            if (message.parent != null) {
-              if (!visible) return const SizedBox(height: 0);
-              if (visible) {
-                return Padding(
-                  padding: const EdgeInsets.all(6.0).copyWith(left: 40),
-                  child: CanMessageView(message: message),
-                );
+              if (!controllers.containsKey(id)) {
+                controllers[id] = CustomExpansionTileController();
+                keys[id] = GlobalKey();
               }
-            }
 
-            return Padding(
-              padding: const EdgeInsets.all(6.0),
-              child: Row(
-                children: [
-                  CanMessageView(message: message),
-                  if (data.elementAtOrNull(index + 1)?.message.parent != null && message.parent == null) //
+              return Padding(
+                padding: const EdgeInsets.all(6.0).copyWith(left: message.parent == null ? 0 : 40),
+                child: Row(
+                  children: [
+                    CanMessageView(message: message),
+                    if (data.elementAtOrNull(id + 1)?.message.parent != null && message.parent == null) //
 
-                    SizedBox(
-                      height: 32,
-                      child: IconButton(
-                        onPressed: () {
-                          data[index].visible = !data[index].visible;
+                      SizedBox(
+                        height: 32,
+                        child: IconButton(
+                          onPressed: () {
+                            var i = id + 2;
 
-                          var i = index + 1;
+                            data[id + 1].visible = !data[id + 1].visible;
 
-                          while (data[i].message.parent == index) {
-                            data[i].visible = data[index].visible;
+                            while (data[i].message.parent == id) {
+                              data[i].visible = data[id + 1].visible;
 
-                            i++;
-                          }
+                              i++;
+                            }
 
-                          setState(() {
-                            openItems = countOpenItems();
-                            // listViewController.totalItemCount = countOpenItems();
-                          });
-                        },
-                        icon: const Icon(Icons.unfold_more),
-                        selectedIcon: const Icon(Icons.unfold_less),
-                        isSelected: visible,
-                        splashRadius: 16,
-                        iconSize: 16,
+                            setState(() {
+                              logicalToRealIndexMap = _generateReverseMapping();
+                              listViewController.totalItemCount = logicalToRealIndexMap.keys.length;
+                              listViewController.invalidateList(true);
+                            });
+                          },
+                          icon: const Icon(Icons.unfold_more),
+                          selectedIcon: const Icon(Icons.unfold_less),
+                          isSelected: !data[id + 1].visible,
+                          splashRadius: 16,
+                          iconSize: 16,
+                        ),
                       ),
-                    ),
-                ],
-              ),
-            );
-            // }
-
-            // return CanMessageView(message: message);
-
-            // return CustomExpansionTile(
-            //   title: CanMessageView(message: message),
-            //   tilePadding: const EdgeInsets.all(8),
-            //   controlAffinity: ListTileControlAffinity.trailing,
-            //   controller: controllers[index],
-            //   key: keys[index],
-            //   children: [
-            //     for (final message in children)
-            //       Padding(
-            //         padding: const EdgeInsets.all(8.0),
-            //         child: CanMessageView(
-            //           message: message,
-            //           trailing: TextButton(
-            //             onPressed: () {
-            //               controllers[index]?.collapse();
-            //             },
-            //             child: const Text("Close"),
-            //           ),
-            //         ),
-            //       ),
-            //   ],
-            // );
-          },
-
-          thumbBuilder: DraggableScrollbarThumbs.ArrowThumb,
-          thumbBackgroundColor: Theme.of(context).focusColor,
-          thumbDrawColor: Colors.grey,
-          thumbHeight: 48,
-          placeholderBuilder: (context, index) => buildPlaceholder(),
-          waitBuilder: (context) => const Center(child: CircularProgressIndicator()),
-          emptyBuilder: (context) => const Text("empty :)"),
-          firstShown: (index) {},
-          scrollDirection: Axis.vertical,
-          padding: const EdgeInsets.all(6.0),
-          alwaysVisibleThumb: false,
+                  ],
+                ),
+              );
+            },
+            thumbBuilder: DraggableScrollbarThumbs.ArrowThumb,
+            thumbBackgroundColor: Theme.of(context).focusColor,
+            thumbDrawColor: Colors.grey,
+            thumbHeight: 48,
+            placeholderBuilder: (context, index) => buildPlaceholder(),
+            waitBuilder: (context) => const Center(child: CircularProgressIndicator()),
+            emptyBuilder: (context) => const Text("empty :)"),
+            firstShown: (index) {},
+            scrollDirection: Axis.vertical,
+            padding: const EdgeInsets.all(6.0),
+            alwaysVisibleThumb: false,
+          ),
         ),
       ),
     );

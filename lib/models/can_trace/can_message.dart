@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import 'package:xqflite/xqflite.dart';
 
 class CanMessage {
+  final int? id;
+
   final int rxId;
   final bool multiLine;
   final Uint8List data;
@@ -11,6 +13,7 @@ class CanMessage {
   final int? parent;
 
   const CanMessage({
+    this.id,
     required this.rxId,
     required this.multiLine,
     required this.data,
@@ -44,6 +47,7 @@ class CanMessage {
 
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
+      'id': id,
       'rx_id': rxId,
       'multi_line': multiLine ? 1 : 0,
       'data': data,
@@ -56,6 +60,7 @@ class CanMessage {
 
   factory CanMessage.fromMap(Map<String, dynamic> map) {
     return CanMessage(
+      id: map['id'] as int?,
       rxId: map['rx_id'] as int,
       multiLine: map['multi_line'] == 1,
       data: map['data'],
@@ -74,11 +79,23 @@ class CanMessage {
   bool operator ==(covariant CanMessage other) {
     if (identical(this, other)) return true;
 
-    return other.rxId == rxId && other.multiLine == multiLine && other.data == data && other.timeOffset == timeOffset && other.messageNumber == messageNumber && other.parent == parent;
+    return other.rxId == rxId && //
+        other.id == id &&
+        other.multiLine == multiLine &&
+        other.data == data &&
+        other.timeOffset == timeOffset &&
+        other.messageNumber == messageNumber &&
+        other.parent == parent;
   }
 
   @override
   int get hashCode {
-    return rxId.hashCode ^ multiLine.hashCode ^ data.hashCode ^ timeOffset.hashCode ^ messageNumber.hashCode ^ parent.hashCode;
+    return rxId.hashCode ^ //
+        multiLine.hashCode ^
+        id.hashCode ^
+        data.hashCode ^
+        timeOffset.hashCode ^
+        messageNumber.hashCode ^
+        parent.hashCode;
   }
 }
