@@ -1,0 +1,25 @@
+[package]
+name = "parser"
+version = "0.1.0"
+edition = "2021"
+
+[toolchain]
+channel = "nightly"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+debug = true
+
+[dependencies]
+# floem = { git = "https://github.com/lapce/floem", rev = "e8c1d33454a0a0dc0d009dd140b93513357b55a0" }
+#floem = { path = "../floem" }
+#im = "15.1.0"
+
+# eframe = "0.20.1"
+# eframe = {git = "https://github.com/emilk/egui", rev = "12b6f2c3a0c2c63c2f8b5fc1e320d6d6cea4cc21"}
+egui = "0.23"
+eframe = "0.23.0"
+rfd = "0.11"
+env_logger = "0.10"
+egui_dock = "0.8.0"
